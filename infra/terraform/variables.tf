@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "project_name" {
-  description = "Nom du projet, utilisé pour préfixer/tagger les ressources"
+  description = "Nom du projet"
   type        = string
   default     = "url-shortener"
 }
