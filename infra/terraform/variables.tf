@@ -15,3 +15,8 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"
 }
+
+variable "my_ip" {
+  description = "mon IP publique, pour restreindre SSH/Jenkins"
+  type        = string
+}
