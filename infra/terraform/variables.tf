@@ -20,3 +20,16 @@ variable "my_ip" {
   description = "mon IP publique, pour restreindre SSH/Jenkins"
   type        = string
 }
+
+
+variable "db_username" {
+  description = "Nom d'utilisateur admin pour RDS"
+  type        = string
+  default     = "dbadmin"
+}
+
+variable "db_password" {
+  description = "Mot de passe admin pour RDS"
+  type        = string
+  sensitive   = true
+}
