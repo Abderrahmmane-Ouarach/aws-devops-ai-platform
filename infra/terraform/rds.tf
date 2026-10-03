@@ -1,7 +1,7 @@
 # Groupe de subnets — dit à RDS dans quel(s) subnet(s) il a le droit de vivre
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = [aws_subnet.private.id]
+  subnet_ids = [aws_subnet.private.id, aws_subnet.private_b.id]
 
   tags = {
     Name = "${var.project_name}-db-subnet-group"
@@ -11,7 +11,7 @@ resource "aws_db_subnet_group" "main" {
 resource "aws_db_instance" "main" {
   identifier        = "${var.project_name}-db"
   engine            = "postgres"
-  engine_version    = "16.3"
+  engine_version    = "16"
   instance_class    = "db.t3.micro"
   allocated_storage = 20
 
