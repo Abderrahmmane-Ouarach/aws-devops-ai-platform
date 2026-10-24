@@ -1,0 +1,76 @@
+pipeline {
+  agent any
+
+  options {
+    disableConcurrentBuilds()
+  }
+
+  triggers {
+    pollSCM('H/5 * * * *')
+  }
+
+  environment {
+    AWS_DEFAULT_REGION = 'eu-west-3'
+    REPO_NAME          = 'url-shortener-app'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Init') {
+      steps {
+        script {
+          def account = sh(script: 'aws sts get-caller-identity --query Account --output text', returnStdout: true).trim()
+          env.ECR_DOMAIN = "${account}.dkr.ecr.${env.AWS_DEFAULT_REGION}.amazonaws.com"
+          env.IMAGE      = "${env.ECR_DOMAIN}/${env.REPO_NAME}"
+          env.IMAGE_TAG  = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        }OLLaollaadilawlawZ4949!$
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'docker build -t $IMAGE:$IMAGE_TAG -t $IMAGE:latest app/'
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        sh '''
+          aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_DOMAIN
+          docker push $IMAGE:$IMAGE_TAG
+          docker push $IMAGE:latest
+        '''
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        withCredentials([
+          sshUserPrivateKey(credentialsId: 'app-ssh-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
+          string(credentialsId: 'app-host', variable: 'APP_HOST')
+        ]) {
+          sh '''
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$SSH_USER@$APP_HOST" \
+              "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_DOMAIN \
+               && docker pull $IMAGE:$IMAGE_TAG \
+               && (docker rm -f url-shortener || true) \
+               && docker run -d --name url-shortener --restart unless-stopped -p 3000:3000 --env-file /home/ubuntu/app.env $IMAGE:$IMAGE_TAG"
+          '''
+        }
+      }
+    }
+
+    stage('Verify') {
+      steps {
+        withCredentials([string(credentialsId: 'app-host', variable: 'APP_HOST')]) {
+          sh 'for i in 1 2 3 4 5 6; do curl -fs http://$APP_HOST:3000/health && exit 0; sleep 5; done; exit 1'
+        }
+      }
+    }
+  }
+}
