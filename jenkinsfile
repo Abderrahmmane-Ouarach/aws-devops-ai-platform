@@ -28,7 +28,7 @@ pipeline {
           env.ECR_DOMAIN = "${account}.dkr.ecr.${env.AWS_DEFAULT_REGION}.amazonaws.com"
           env.IMAGE      = "${env.ECR_DOMAIN}/${env.REPO_NAME}"
           env.IMAGE_TAG  = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-        }OLLaollaadilawlawZ4949!$
+        }
       }
     }
 
