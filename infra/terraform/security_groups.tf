@@ -20,6 +20,14 @@ resource "aws_security_group" "app" {
     cidr_blocks = [var.my_ip]
   }
 
+  ingress {
+    description     = "SSH from Jenkins"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.jenkins.id]
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
