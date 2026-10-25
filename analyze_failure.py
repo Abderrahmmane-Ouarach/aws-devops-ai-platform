@@ -3,8 +3,8 @@
 import json, os, re, urllib.request
 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")  
-MAX_LINES = 120
+MODEL = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")  
+MAX_LINES = 6000
 
 def read_log_tail():
     home = os.environ.get("JENKINS_HOME", "/var/lib/jenkins")
@@ -39,7 +39,7 @@ def main():
     )
     body = json.dumps({
         "model": MODEL,
-        "max_tokens": 400,
+        "max_tokens": 1500,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
     req = urllib.request.Request(API_URL, data=body, headers={
