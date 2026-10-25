@@ -19,6 +19,12 @@ router.post('/shorten', async (req, res) => {
   if (!longUrl) {
     return res.status(400).json({ error: 'longUrl is required' });
   }
+  try {
+    const u = new URL(longUrl);
+    if (!['http:', 'https:'].includes(u.protocol)) throw new Error();
+  } catch {
+    return res.status(400).json({ error: 'longUrl must be a valid http(s) URL' });
+  }
 
   let shortCode;
   let inserted = false;
@@ -67,5 +73,18 @@ router.get('/:code', async (req, res) => {
   pool.query('UPDATE urls SET click_count = click_count + 1 WHERE short_code = $1', [code]).catch(console.error);
   res.redirect(302, longUrl);
 });
+
+// GET /api/stats/:code → click count and target for one link
+router.get('/stats/:code', async (req, res) => {
+  const result = await pool.query(
+    'SELECT short_code, long_url, click_count, created_at FROM urls WHERE short_code = $1',
+    [req.params.code]
+  );
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: 'Short URL not found' });
+  }
+  res.json(result.rows[0]);
+});
+
 
 export default router;

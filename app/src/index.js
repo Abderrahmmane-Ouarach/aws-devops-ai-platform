@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import pool from './db.js';
 import cache from './cache.js';
 import urlRoutes from './routes/urls.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -19,6 +21,8 @@ app.get('/health', async (req, res) => {
     res.status(500).json({ status: 'error', message: err.message });
   }
 });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api', urlRoutes); // → POST /api/shorten
 app.use('/', urlRoutes);    // → GET /:code (redirection)
