@@ -14,7 +14,7 @@ app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
     await cache.ping();
-    res.json({ status: 'ok' });
+    res.json({ status: 'okk' });
   } catch (err) {
     res.status(500).json({ status: 'error', message: err.message });
   }
