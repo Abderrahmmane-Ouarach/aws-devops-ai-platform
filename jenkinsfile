@@ -81,7 +81,7 @@ pipeline {
   post {
     failure {
       withCredentials([string(credentialsId: 'groq-api-key', variable: 'GROQ_API_KEY')]) {
-        sh 'python3 ci/analyze_failure.py || true'
+        sh 'python3 analyze_failure.py || true'
       }
     }
   }
