@@ -72,10 +72,6 @@ pipeline {
         }
       }
     }
-
-    stage('Failure test') {
-      steps { sh 'docker pull $IMAGE:does-not-exist' }
-    }
   }
 
   post {
