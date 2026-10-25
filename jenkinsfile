@@ -72,6 +72,10 @@ pipeline {
         }
       }
     }
+
+    stage('Failure test') {
+      steps { sh 'docker pull 956118718512.dkr.ecr.eu-west-3.amazonaws.com/url-shortener-app:does-not-exist' }
+    }
   }
 
   post {
