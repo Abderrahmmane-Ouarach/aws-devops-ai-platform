@@ -2,6 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import pool from '../db.js';
 import cache from '../cache.js';
+import { cacheLookups, linksCreated } from '../metrics.js'; //
 
 const router = Router();
 
@@ -19,7 +20,10 @@ router.post('/shorten', async (req, res) => {
   if (!longUrl) {
     return res.status(400).json({ error: 'longUrl is required' });
   }
+
+  // Only accept http(s) URLs of reasonable length
   try {
+    if (typeof longUrl !== 'string' || longUrl.length > 2048) throw new Error();
     const u = new URL(longUrl);
     if (!['http:', 'https:'].includes(u.protocol)) throw new Error();
   } catch {
@@ -44,7 +48,21 @@ router.post('/shorten', async (req, res) => {
     }
   }
 
+  linksCreated.inc(); //
+
   res.status(201).json({ shortCode, shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}` });
+});
+
+// GET /api/stats/:code → click count and target for one link
+router.get('/stats/:code', async (req, res) => {
+  const result = await pool.query(
+    'SELECT short_code, long_url, click_count, created_at FROM urls WHERE short_code = $1',
+    [req.params.code]
+  );
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: 'Short URL not found' });
+  }
+  res.json(result.rows[0]);
 });
 
 // GET /:code → redirection
@@ -54,10 +72,12 @@ router.get('/:code', async (req, res) => {
   // 1. On check le cache d'abord
   const cachedUrl = await cache.get(code);
   if (cachedUrl) {
+    cacheLookups.inc({ result: 'hit' }); //
     // Fire-and-forget : on incrémente le compteur sans bloquer la redirection
     pool.query('UPDATE urls SET click_count = click_count + 1 WHERE short_code = $1', [code]).catch(console.error);
     return res.redirect(302, cachedUrl);
   }
+  cacheLookups.inc({ result: 'miss' }); //
 
   // 2. Sinon on va en DB
   const result = await pool.query('SELECT long_url FROM urls WHERE short_code = $1', [code]);
@@ -73,18 +93,5 @@ router.get('/:code', async (req, res) => {
   pool.query('UPDATE urls SET click_count = click_count + 1 WHERE short_code = $1', [code]).catch(console.error);
   res.redirect(302, longUrl);
 });
-
-// GET /api/stats/:code → click count and target for one link
-router.get('/stats/:code', async (req, res) => {
-  const result = await pool.query(
-    'SELECT short_code, long_url, click_count, created_at FROM urls WHERE short_code = $1',
-    [req.params.code]
-  );
-  if (result.rows.length === 0) {
-    return res.status(404).json({ error: 'Short URL not found' });
-  }
-  res.json(result.rows[0]);
-});
-
 
 export default router;

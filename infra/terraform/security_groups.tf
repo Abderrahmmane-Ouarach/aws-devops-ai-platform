@@ -28,6 +28,15 @@ resource "aws_security_group" "app" {
     security_groups = [aws_security_group.jenkins.id]
   }
 
+  
+  ingress {
+    description     = "node_exporter scrape from monitoring"
+    from_port       = 9100
+    to_port         = 9100
+    protocol        = "tcp"
+    security_groups = [aws_security_group.monitoring.id]
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -127,5 +136,33 @@ resource "aws_security_group" "redis" {
 
   tags = {
     Name = "${var.project_name}-sg-redis"
+  }
+}
+
+
+// monitoring
+resource "aws_security_group" "monitoring" {
+  name        = "${var.project_name}-sg-monitoring"
+  description = "SG for Prometheus and Grafana host"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH from my IP (Grafana and Prometheus are reached through a tunnel)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-sg-monitoring"
   }
 }

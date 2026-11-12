@@ -69,3 +69,26 @@ resource "aws_instance" "jenkins" {
     Name = "${var.project_name}-ec2-jenkins"
   }
 }
+
+
+resource "aws_instance" "monitoring" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.small"
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.monitoring.id]
+  key_name               = aws_key_pair.deployer.key_name
+  user_data              = local.install_docker
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
+  tags = {
+    Name = "${var.project_name}-ec2-monitoring"
+  }
+}
