@@ -28,6 +28,10 @@ output "ec2_app_public_ip" {
   value = aws_instance.app.public_ip
 }
 
+output "ec2_app_private_ip" {
+  value = aws_instance.app.private_ip
+}
+
 output "ec2_jenkins_public_ip" {
   value = aws_instance.jenkins.public_ip
 }
